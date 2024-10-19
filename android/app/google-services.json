@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "36328857443",
+    "project_id": "finshorts-c1aed",
+    "storage_bucket": "finshorts-c1aed.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:36328857443:android:c7bfb78b81bc7fb064fd56",
+        "android_client_info": {
+          "package_name": "com.stocknews"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "36328857443-n0hmu8t09tnnkqa4vatpme2entc54qsg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.stocknews",
+            "certificate_hash": "4301182ab91ca7bb6f84b973c14bc2636178f590"
+          }
+        },
+        {
+          "client_id": "36328857443-sbppc3351ll6hlp3gsu9fjo9ho094a8k.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCaD6SO-M9A8RF0g8iKWyN13hWm1LOZSp4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "36328857443-sbppc3351ll6hlp3gsu9fjo9ho094a8k.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "36328857443-1sfenblkv7aku22bdc8ebo0lar409e63.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.stocknews"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
