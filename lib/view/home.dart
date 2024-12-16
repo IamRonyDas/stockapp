@@ -30,6 +30,11 @@ class _NewsPageState extends State<NewsPage> {
   }
 
   @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: PageView.builder(

@@ -91,12 +91,12 @@ class _EditProfileState extends State<EditProfile> {
 
       if (userDoc.exists) {
         setState(() {
-          nameController.text = userDoc['full_name'] ?? '';
+          nameController.text = userDoc['name'] ?? '';
           emailController.text = userDoc['email'] ?? '';
-          phoneController.text = userDoc['phone_number'] ?? '';
+          phoneController.text = userDoc['phone'] ?? '';
           selectedGender = userDoc['gender'] ?? '';
           ageController.text = userDoc['age'] ?? '';
-          profileImageUrl = userDoc['profile_image'] ?? '';
+          profileImageUrl = userDoc['ImageUrl'] ?? '';
         });
         log('User data fetched successfully');
       }
@@ -148,12 +148,12 @@ class _EditProfileState extends State<EditProfile> {
           .collection('users')
           .doc(currentUser.uid)
           .update({
-        'full_name': nameController.text,
+        'name': nameController.text,
         'email': emailController.text,
-        'phone_number': phoneController.text,
+        'phone': phoneController.text,
         'gender': selectedGender,
         'age': ageController.text,
-        'profile_image': profileImageUrl,
+        'ImageUrl': profileImageUrl,
       });
 
       log('User data updated successfully');
@@ -211,148 +211,158 @@ class _EditProfileState extends State<EditProfile> {
     double h = MediaQuery.of(context).size.height;
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Edit Profile'),
+      ),
       body: GestureDetector(
         onTap: () {
           FocusScope.of(context).unfocus();
         },
-        child: Stack(
-          // Using Stack to show loader over content
+        child: Column(
           children: [
-            SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    GestureDetector(
-                      onTap: _showImageSourceDialog,
-                      child: Center(
-                        child: Stack(
-                          children: [
-                            CircleAvatar(
-                              radius: 60,
-                              backgroundImage: profileImageUrl != null
-                                  ? NetworkImage(profileImageUrl!)
-                                  : null,
-                              child: profileImageUrl == null
-                                  ? const Icon(Icons.camera_alt, size: 50)
-                                  : null,
-                            ),
-                            Positioned(
-                              right: 0,
-                              bottom: 0,
-                              child: GestureDetector(
-                                onTap: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return AlertDialog(
-                                        title: const Text('Confirm Delete'),
-                                        content: const Text(
-                                            'Are you sure you want to delete the image?'),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () {
-                                              Navigator.of(context).pop();
-                                            },
-                                            child: const Text('Cancel'),
-                                          ),
-                                          TextButton(
-                                            onPressed: () {
-                                              setState(() {
-                                                profileImageUrl = null;
-                                              });
-                                              Navigator.of(context).pop();
-                                            },
-                                            child: const Text('Delete'),
-                                          ),
-                                        ],
+            Stack(
+              // Using Stack to show loader over content
+              children: [
+                SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        GestureDetector(
+                          onTap: _showImageSourceDialog,
+                          child: Center(
+                            child: Stack(
+                              children: [
+                                CircleAvatar(
+                                  radius: 60,
+                                  backgroundImage: profileImageUrl != null
+                                      ? NetworkImage(profileImageUrl!)
+                                      : null,
+                                  child: profileImageUrl == null
+                                      ? const Icon(Icons.camera_alt, size: 50)
+                                      : null,
+                                ),
+                                Positioned(
+                                  right: 0,
+                                  bottom: 0,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return AlertDialog(
+                                            title: const Text('Confirm Delete'),
+                                            content: const Text(
+                                                'Are you sure you want to delete the image?'),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.of(context).pop();
+                                                },
+                                                child: const Text('Cancel'),
+                                              ),
+                                              TextButton(
+                                                onPressed: () {
+                                                  setState(() {
+                                                    profileImageUrl = null;
+                                                  });
+                                                  Navigator.of(context).pop();
+                                                },
+                                                child: const Text('Delete'),
+                                              ),
+                                            ],
+                                          );
+                                        },
                                       );
                                     },
-                                  );
-                                },
-                                child: const CircleAvatar(
-                                  radius: 18,
-                                  backgroundColor: Colors.white,
-                                  child: Icon(
-                                    Icons.delete,
-                                    color: Colors.red,
-                                    size: 20,
+                                    child: const CircleAvatar(
+                                      radius: 18,
+                                      backgroundColor: Colors.white,
+                                      child: Icon(
+                                        Icons.delete,
+                                        color: Colors.red,
+                                        size: 20,
+                                      ),
+                                    ),
                                   ),
                                 ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: h * 0.05),
+                        _buildProfileTextField(
+                            'Full Name', nameController, h, w),
+                        _buildProfileTextField('Email', emailController, h, w),
+                        _buildProfileTextField(
+                            'Phone Number', phoneController, h, w),
+                        DropdownButtonFormField<String>(
+                          value: selectedGender,
+                          decoration: const InputDecoration(
+                            filled: true,
+                            fillColor: Color.fromARGB(255, 183, 177, 202),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(10)),
+                              borderSide:
+                                  BorderSide(color: Colors.grey, width: 1.0),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(10)),
+                              borderSide:
+                                  BorderSide(color: Colors.blue, width: 2.0),
+                            ),
+                          ),
+                          items: ['Male', 'Female', 'Other']
+                              .map((gender) => DropdownMenuItem<String>(
+                                    value: gender,
+                                    child: Text(gender),
+                                  ))
+                              .toList(),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              selectedGender = newValue!;
+                            });
+                          },
+                        ),
+                        _buildProfileTextField('Age', ageController, h, w),
+                        SizedBox(height: h * 0.04),
+                        GestureDetector(
+                          onTap: _updateUserData, // Trigger data update
+                          child: Center(
+                            child: Container(
+                              width: w * 0.85,
+                              height: h * 0.06,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(15),
+                                color: Colors.blue,
+                              ),
+                              child: const Center(
+                                child: Text('Save Changes',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold)),
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: h * 0.05),
-                    _buildProfileTextField('Full Name', nameController, h, w),
-                    _buildProfileTextField('Email', emailController, h, w),
-                    _buildProfileTextField(
-                        'Phone Number', phoneController, h, w),
-                    DropdownButtonFormField<String>(
-                      value: selectedGender,
-                      decoration: const InputDecoration(
-                        filled: true,
-                        fillColor: Color.fromARGB(255, 183, 177, 202),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(10)),
-                          borderSide:
-                              BorderSide(color: Colors.grey, width: 1.0),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(10)),
-                          borderSide:
-                              BorderSide(color: Colors.blue, width: 2.0),
-                        ),
-                      ),
-                      items: ['Male', 'Female', 'Other']
-                          .map((gender) => DropdownMenuItem<String>(
-                                value: gender,
-                                child: Text(gender),
-                              ))
-                          .toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          selectedGender = newValue!;
-                        });
-                      },
-                    ),
-                    _buildProfileTextField('Age', ageController, h, w),
-                    SizedBox(height: h * 0.04),
-                    GestureDetector(
-                      onTap: _updateUserData, // Trigger data update
-                      child: Center(
-                        child: Container(
-                          width: w * 0.85,
-                          height: h * 0.06,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(15),
-                            color: Colors.blue,
-                          ),
-                          child: const Center(
-                            child: Text('Save Changes',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold)),
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+                // Loader shown when _isLoading is true
+                if (_isLoading)
+                  const Center(
+                    child: CircularProgressIndicator(
+                      color: Colors.blue,
+                    ),
+                  ),
+              ],
             ),
-            // Loader shown when _isLoading is true
-            if (_isLoading)
-              const Center(
-                child: CircularProgressIndicator(
-                  color: Colors.blue,
-                ),
-              ),
           ],
         ),
       ),

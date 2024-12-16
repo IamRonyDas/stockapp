@@ -20,7 +20,7 @@ class WelcomeButton extends StatelessWidget {
             context, MaterialPageRoute(builder: (context) => onTap!));
       },
       child: Container(
-          padding: const EdgeInsets.all(30.0),
+          padding: const EdgeInsets.all(20.0),
           decoration: BoxDecoration(
               color: color!,
               borderRadius: const BorderRadius.only(
@@ -30,7 +30,7 @@ class WelcomeButton extends StatelessWidget {
             ButtonText,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 20.0,
+              fontSize: 18.0,
               fontWeight: FontWeight.bold,
               color: textColor!,
             ),

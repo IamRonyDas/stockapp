@@ -160,12 +160,13 @@ class _SignupScreenState extends State<SignupScreen> {
                     );
                     return;
                   }
-                   Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => RegisterScreen(email: emailController.text),
-          ), 
-        );
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          RegisterScreen(email: emailController.text),
+                    ),
+                  );
                 },
                 child: Container(
                     alignment: Alignment.center,

@@ -1,41 +1,63 @@
 import 'dart:developer';
-import 'dart:io';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:io';
 
 class FireBaseFunctions {
-  Future<String> uploadImage(File image) async {
-    FirebaseStorage storage = FirebaseStorage.instance;
-    String imageFileName = 'profile_images/${DateTime.now()}.jpg';
-    UploadTask uploadTask = storage.ref(imageFileName).putFile(image);
-    TaskSnapshot taskSnapshot = await uploadTask;
-    return await taskSnapshot.ref.getDownloadURL();
-  }
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   Future<void> uploadUserData(
     String name,
-    String phoneNumber,
+    String phone,
     String age,
     String gender,
     String email,
     String password,
     File image,
   ) async {
-    String imageUrl = await uploadImage(image);
+    try {
+      // Upload the image to Firebase Storage
+      log("i am chandna");
+      String imageUrl = await _uploadImageToStorage(email, image);
 
-    CollectionReference users = FirebaseFirestore.instance.collection('users');
-    users
-        .doc(FirebaseAuth.instance.currentUser!.uid)
-        .set({
-          'full_name': name,
-          'email': email,
-          'profile_image': imageUrl,
-          'phone_number': phoneNumber,
-          'age': age,
-          'gender': gender,
-        })
-        .then((value) => log("User Added"))
-        .catchError((error) => log("Failed to add user: $error"));
+      // Save user details in Firestore
+      String uuid = FirebaseAuth.instance.currentUser!.uid;
+      await _firestore.collection('users').doc(uuid).set({
+        'name': name,
+        'phone': phone,
+        'age': age,
+        'gender': gender,
+        'email': email,
+        'password': password,
+        'imageUrl': imageUrl,
+      });
+
+      log("User data uploaded successfully");
+    } catch (e) {
+      log("Error uploading user data: $e");
+      rethrow;
+    }
+  }
+
+  Future<String> _uploadImageToStorage(String email, File image) async {
+    try {
+      // Define a unique path for the image in Firebase Storage
+      String storagePath = 'user_images/$email/profile_image.jpg';
+
+      // Upload the file
+      UploadTask uploadTask = _storage.ref(storagePath).putFile(image);
+      TaskSnapshot snapshot = await uploadTask;
+
+      // Get the download URL for the uploaded file
+      String downloadUrl = await snapshot.ref.getDownloadURL();
+      return downloadUrl;
+    } catch (e) {
+      log("Error uploading image: $e");
+      throw Exception('Failed to upload image');
+    }
   }
 }

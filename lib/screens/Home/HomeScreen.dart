@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:stocknews/screens/edit_profile.dart';
 import 'package:stocknews/screens/profile_screen.dart';
+import 'package:stocknews/screens/settingpage.dart';
 import 'package:stocknews/view/home.dart';
 
 class NewsScreen extends StatefulWidget {
@@ -13,14 +14,12 @@ class NewsScreen extends StatefulWidget {
 class _NewsScreenState extends State<NewsScreen> {
   int _currentIndex = 0; // This variable tracks the index of the selected tab
 
-  // List of widgets that correspond to each BottomNavigationBar item
   final List<Widget> _pages = [
     const NewsPage(),
-    const EditProfile(),
-    const ProfileScreen(),
+    // const EditProfile(),
+    SettingPage(),
   ];
 
-  // This method updates the selected index
   void _onTabTapped(int index) {
     setState(() {
       _currentIndex = index;
@@ -34,8 +33,10 @@ class _NewsScreenState extends State<NewsScreen> {
         title: _currentIndex == 0
             ? Text('News')
             : _currentIndex == 1
-                ? Text('search topic')
-                : Text('Profile'),
+                ? Text('Setting', style: TextStyle(color: Colors.black))
+                : Text(
+                    'Profile',
+                  ),
       ),
       body: _pages[_currentIndex], // Displays the selected page
       bottomNavigationBar: BottomNavigationBar(
@@ -46,10 +47,10 @@ class _NewsScreenState extends State<NewsScreen> {
             icon: Icon(Icons.home),
             label: 'Home',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search',
-          ),
+          // BottomNavigationBarItem(
+          //   icon: Icon(Icons.search),
+          //   label: 'Search',
+          // ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
             label: 'Profile',

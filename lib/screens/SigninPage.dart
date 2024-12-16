@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -274,7 +275,7 @@ class _SigninPageState extends State<SigninPage> {
     );
   }
 
-  Future<dynamic> signInWithGoogle() async {
+  Future<void> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
 
@@ -286,10 +287,38 @@ class _SigninPageState extends State<SigninPage> {
         idToken: googleAuth?.idToken,
       );
 
-      return await FirebaseAuth.instance.signInWithCredential(credential);
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
+
+      final user = userCredential.user;
+      if (user != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.email)
+            .get();
+        log("${userDoc.data()}");
+
+        if (userDoc.exists) {
+          Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => NewsScreen()),
+              (route) => false);
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => RegisterScreen(
+                email: user.email ?? '',
+              ),
+            ),
+          );
+        }
+      }
     } on Exception catch (e) {
-      // TODO
-      print('exception->$e');
+      log('Exception during Google Sign-In: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Google Sign-In failed')),
+      );
     }
   }
 
@@ -298,11 +327,7 @@ class _SigninPageState extends State<SigninPage> {
       onTap: () async {
         log('Login with $s');
         if (s == "Sign in with Google") {
-          userCredential = await signInWithGoogle();
-          if (userCredential != null) {
-            Navigator.push(
-                context, MaterialPageRoute(builder: (context) => NewsScreen()));
-          }
+          await signInWithGoogle();
         } else {
           // Implement Apple Sign in
         }

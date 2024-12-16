@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:stocknews/screens/Home/HomeScreen.dart';
-import 'package:stocknews/screens/profile_screen.dart';
 import 'package:stocknews/services/firebase_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -25,20 +24,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
   TextEditingController ageController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   TextEditingController confirmPasswordController = TextEditingController();
-  String selectedGender = 'Male'; // Default gender selection
+  String selectedGender = 'Male';
 
-  // Variables for password visibility
   bool isPasswordVisible = false;
   bool isConfirmPasswordVisible = false;
+  bool isLoading = false;
 
   Future<void> _pickImage(ImageSource source) async {
-    final XFile? pickedFile = await _picker.pickImage(source: source);
-    if (pickedFile!.path.isNotEmpty) {
-      log('Image path: ${pickedFile.path}');
-      setState(() {
-        image = File(pickedFile.path);
-        log('Image: $image');
-      });
+    try {
+      final XFile? pickedFile = await _picker.pickImage(source: source);
+      if (pickedFile != null && pickedFile.path.isNotEmpty) {
+        setState(() {
+          image = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      log('Image picking error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to pick image')),
+      );
     }
   }
 
@@ -74,16 +78,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String labelText,
-      {TextInputType inputType = TextInputType.text,
-      bool obscureText = false,
-      bool isPasswordField = false}) {
+  Widget _buildTextField(
+    TextEditingController controller,
+    String labelText, {
+    TextInputType inputType = TextInputType.text,
+    bool obscureText = false,
+    bool isPasswordField = false,
+    bool isConfirmPasswordField = false,
+  }) {
     return TextFormField(
       controller: controller,
       keyboardType: inputType,
       obscureText: isPasswordField
-          ? (isPasswordField ? !isPasswordVisible : !isConfirmPasswordVisible)
-          : obscureText,
+          ? !isPasswordVisible
+          : isConfirmPasswordField
+              ? !isConfirmPasswordVisible
+              : obscureText,
       decoration: InputDecoration(
         labelText: labelText,
         filled: true,
@@ -96,10 +106,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
           borderRadius: BorderRadius.all(Radius.circular(10)),
           borderSide: BorderSide(color: Colors.blue, width: 2.0),
         ),
-        suffixIcon: isPasswordField // Add the eye icon for password visibility
+        suffixIcon: isPasswordField || isConfirmPasswordField
             ? IconButton(
                 icon: Icon(
-                  isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                  isPasswordField
+                      ? (isPasswordVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off)
+                      : (isConfirmPasswordVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off),
                   color: Colors.grey,
                 ),
                 onPressed: () {
@@ -117,9 +133,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  bool isLoading = false; // Add this line
-
   Future<void> _registerAndUploadData() async {
+    log('Registering user and uploading data');
     if (image.path.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select an image')),
@@ -150,48 +165,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    // Show loading dialog
     setState(() {
       isLoading = true;
     });
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return const Center(child: CircularProgressIndicator());
-      },
-    );
-
     try {
-      UserCredential userCredential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
-              email: widget.email, password: passwordController.text);
-      User? user = userCredential.user;
-      if (user != null) {
+      log("Creating user with email: ${widget.email}");
+
+      if (FirebaseAuth.instance.currentUser != null) {
         await FireBaseFunctions().uploadUserData(
-            nameController.text,
-            phoneController.text,
-            ageController.text,
-            selectedGender,
-            widget.email,
-            passwordController.text,
-            image);
-        log('User data uploaded successfully');
-        Navigator.of(context).pop(); // Close the loading dialog
-        setState(() {
-          isLoading = false; // Reset loading state
-        });
+          nameController.text,
+          phoneController.text,
+          ageController.text,
+          selectedGender,
+          widget.email,
+          passwordController.text,
+          image,
+        );
+        Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => NewsScreen()),
+            (route) => false);
       }
-    } catch (e) {
-      log(e.toString());
+    } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to create account')),
+        SnackBar(content: Text('Error: ${e.message}')),
       );
-      // Close loading dialog and reset loading state
-      Navigator.of(context).pop(); // Close the loading dialog
+    } finally {
       setState(() {
-        isLoading = false; // Reset loading state
+        isLoading = false;
       });
     }
   }
@@ -200,6 +202,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     double w = MediaQuery.of(context).size.width;
     double h = MediaQuery.of(context).size.height;
+
     return Scaffold(
       body: GestureDetector(
         onTap: () {
@@ -221,9 +224,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: const Icon(Icons.arrow_back),
                     ),
                     SizedBox(width: w * 0.05),
-                    const Text('Register Profile',
-                        style: TextStyle(
-                            fontSize: 36, fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Register Profile',
+                      style:
+                          TextStyle(fontSize: 36, fontWeight: FontWeight.bold),
+                    ),
                   ],
                 ),
                 SizedBox(height: h * 0.02),
@@ -240,50 +245,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ? const Icon(Icons.camera_alt, size: 50)
                               : null,
                         ),
-                        Positioned(
-                          right: 0,
-                          bottom: 0,
-                          child: GestureDetector(
-                            onTap: () {
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    title: const Text('Confirm Delete'),
-                                    content: const Text(
-                                        'Are you sure you want to delete the image?'),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                        },
-                                        child: const Text('Cancel'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          setState(() {
-                                            image = File('');
-                                          });
-                                          Navigator.of(context).pop();
-                                        },
-                                        child: const Text('Delete'),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-                            },
-                            child: const CircleAvatar(
-                              radius: 18,
-                              backgroundColor: Colors.white,
-                              child: Icon(
-                                Icons.delete,
-                                color: Colors.red,
-                                size: 20,
+                        if (image.path.isNotEmpty)
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  image = File('');
+                                });
+                              },
+                              child: const CircleAvatar(
+                                radius: 18,
+                                backgroundColor: Colors.white,
+                                child: Icon(Icons.delete, color: Colors.red),
                               ),
                             ),
                           ),
-                        ),
                       ],
                     ),
                   ),
@@ -291,47 +269,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 SizedBox(height: h * 0.05),
                 _buildTextField(nameController, 'Full Name'),
                 SizedBox(height: h * 0.02),
-                TextFormField(
-                  controller: phoneController,
-                  decoration: InputDecoration(
-                    labelText: 'Phone Number',
-                    filled: true,
-                    fillColor: const Color.fromARGB(
-                        255, 183, 177, 202), // Background fill color
-                    enabledBorder: const OutlineInputBorder(
-                      borderRadius: BorderRadius.all(
-                          Radius.circular(10)), // Rounded borders
-                      borderSide: BorderSide(
-                          color: Colors.grey,
-                          width:
-                              1.0), // Border color and width when not focused
-                    ),
-                    focusedBorder: const OutlineInputBorder(
-                      borderRadius: BorderRadius.all(
-                          Radius.circular(10)), // Rounded borders when focused
-                      borderSide: BorderSide(
-                          color: Colors.blue,
-                          width: 2.0), // Border color and width when focused
-                    ),
-                    suffixIcon:
-                        null, // No suffix icon for the phone number field
-                  ),
-                  keyboardType: TextInputType.number,
-                  inputFormatters: <TextInputFormatter>[
-                    FilteringTextInputFormatter
-                        .digitsOnly, // Only allows digits
-                    LengthLimitingTextInputFormatter(
-                        10), // Limits input to 10 digits
-                  ],
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your phone number';
-                    } else if (value.length != 10) {
-                      return 'Phone number must be exactly 10 digits';
-                    }
-                    return null;
-                  },
-                ),
+                _buildTextField(phoneController, 'Phone Number',
+                    inputType: TextInputType.phone),
                 SizedBox(height: h * 0.02),
                 _buildTextField(ageController, 'Age',
                     inputType: TextInputType.number),
@@ -350,46 +289,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       borderSide: BorderSide(color: Colors.blue, width: 2.0),
                     ),
                   ),
-                  items: ['Male', 'Female', 'Other']
-                      .map((gender) => DropdownMenuItem<String>(
-                            value: gender,
-                            child: Text(gender),
-                          ))
-                      .toList(),
-                  onChanged: (String? newValue) {
+                  items: const [
+                    DropdownMenuItem(value: 'Male', child: Text('Male')),
+                    DropdownMenuItem(value: 'Female', child: Text('Female')),
+                    DropdownMenuItem(value: 'Other', child: Text('Other')),
+                  ],
+                  onChanged: (value) {
                     setState(() {
-                      selectedGender = newValue!;
+                      selectedGender = value!;
                     });
                   },
                 ),
                 SizedBox(height: h * 0.02),
                 _buildTextField(passwordController, 'Password',
-                    obscureText: true, isPasswordField: true),
+                    isPasswordField: true),
                 SizedBox(height: h * 0.02),
                 _buildTextField(confirmPasswordController, 'Confirm Password',
-                    obscureText: true, isPasswordField: false),
-                SizedBox(height: h * 0.06),
-                GestureDetector(
-                  onTap: () async {
-                    await _registerAndUploadData();
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => NewsScreen()));
-                  },
-                  child: Center(
-                    child: Container(
-                      width: w * 0.9,
-                      height: h * 0.06,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(15),
-                        color: Colors.blue,
+                    isConfirmPasswordField: true),
+                SizedBox(height: h * 0.04),
+                Center(
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: h * 0.06,
+                    child: ElevatedButton(
+                      onPressed: isLoading ? null : _registerAndUploadData,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
-                      child: const Center(
-                        child: Text('Save Details',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold)),
-                      ),
+                      child: isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text(
+                              'Save Details',
+                              style: TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.bold),
+                            ),
                     ),
                   ),
                 ),
